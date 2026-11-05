@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Directorio de Diputados - Estado de México</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Tipografía principal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/wellknown/wellknown.js"></script>
+
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg fixed-top py-1 bg-guinda navbar-dark border-bottom">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="https://lh3.googleusercontent.com/d/1jOpQ9JNEU2IELluv-5GaYftlLCt1IvZS" style="height:40px" alt="Logo">
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros" aria-controls="offcanvasFiltros">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+    </div>
+  </nav>
+  <footer class="footer fixed-bottom text-center text-white py-2 bg-vino">
+  <small>
+    Información obtenida de la <b>Coordinación de Politícas Transversales de Gobernabilidad</b> · 
+    @ <b>ATI 2025</b>
+  </small>
+</footer>
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div id="app-container" class="position-relative w-100 vh-100">
+    <!-- KPIs de apertura -->
+    <section id="kpiDashboard" class="kpi-dashboard position-absolute top-0 end-0 m-3" aria-label="Indicadores del directorio">
+      <div class="kpi-summary mb-2">
+        <article class="kpi-stat">
+          <span class="kpi-stat-icon"><i class="fa-solid fa-landmark"></i></span>
+          <span><small class="kpi-label">Locales</small><strong id="kpiLocales" class="kpi-value">0</strong></span>
+        </article>
+        <article class="kpi-stat">
+          <span class="kpi-stat-icon"><i class="fa-solid fa-building-columns"></i></span>
+          <span><small class="kpi-label">Federales</small><strong id="kpiFederales" class="kpi-value">0</strong></span>
+        </article>
+        <article class="kpi-stat">
+          <span class="kpi-stat-icon"><i class="fa-solid fa-users"></i></span>
+          <span><small class="kpi-label">Senadores</small><strong id="kpiSenadores" class="kpi-value">0</strong></span>
+        </article>
+        <article class="kpi-stat">
+          <span class="kpi-stat-icon"><i class="fa-solid fa-flag"></i></span>
+          <span><small class="kpi-label">Partidos</small><strong id="kpiPartidos" class="kpi-value">0</strong></span>
+        </article>
+      </div>
+
+      <div class="kpi-visuals card border-0 rounded-4 shadow-sm bg-white">
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3 px-3">
+          <span class="fw-semibold text-dark">Distribución</span>
+          <span id="kpiMunicipios" class="small text-muted">0 municipios</span>
+        </div>
+        <div class="card-body pt-0 px-3 pb-3">
+          <div class="row g-3 align-items-center">
+            <div class="col-6">
+              <div class="kpi-chart-wrap"><canvas id="kpiTipoChart"></canvas></div>
+              <div class="text-center small text-muted mt-1">Por tipo</div>
+            </div>
+            <div class="col-6">
+              <div class="kpi-gauge" id="kpiGauge" aria-label="Cobertura municipal">
+                <div class="kpi-gauge-center">
+                  <strong id="kpiCobertura">0%</strong>
+                  <span>cobertura</span>
+                </div>
+              </div>
+              <div class="text-center small text-muted mt-1">Municipios</div>
+            </div>
+          </div>
+          <div class="kpi-party-chart mt-3">
+            <div class="small fw-semibold text-muted mb-1">Distribución por partido</div>
+            <div class="kpi-chart-party-wrap"><canvas id="kpiPartidoChart"></canvas></div>
+            <div id="kpiPartidoLegend" class="kpi-party-legend" aria-label="Partidos políticos"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+      <!-- PANEL IZQUIERDO (visible en md+) -->
+      <aside class="filter-panel position-absolute top-0 start-0 m-3 d-none d-md-block">
+        <div class="card bg-white border-0 rounded-4 shadow-sm h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fa-solid fa-sliders me-2"></i>Filtros</h6>
+            <button id="btn-limpiar" class="btn btn-sm btn-outline-secondary" title="Limpiar filtros">
+              <i class="fa-solid fa-broom me-1"></i>Limpiar
+            </button>
+          </div>
+          <div class="card-body overflow-auto side-menu p-3">
+            <!-- Menú principal de representación -->
+            <div class="accordion accordion-flush mb-4" id="menuRepresentacion">
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingLocales">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#submenuLocales"
+                          aria-expanded="false" aria-controls="submenuLocales">
+                    <i class="fa-solid fa-landmark me-2"></i>
+                    Diputados Locales
+                  </button>
+                </h2>
+                <div id="submenuLocales" class="accordion-collapse collapse"
+                     aria-labelledby="headingLocales" data-bs-parent="#menuRepresentacion">
+                  <div class="accordion-body">
+                    <label for="select-local" class="form-label">Distrito local</label>
+                    <select id="select-local" class="form-select py-2 px-3 border-light-subtle">
+                      <option value="">Selecciona distrito local</option>
+                    </select>
+                    <div class="form-text">Selecciona un distrito para resaltarlo en el mapa.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFederales">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#submenuFederales"
+                          aria-expanded="false" aria-controls="submenuFederales">
+                    <i class="fa-solid fa-building-columns me-2"></i>
+                    Diputados Federales
+                  </button>
+                </h2>
+                <div id="submenuFederales" class="accordion-collapse collapse"
+                     aria-labelledby="headingFederales" data-bs-parent="#menuRepresentacion">
+                  <div class="accordion-body">
+                    <label for="select-federal" class="form-label">Distrito federal</label>
+                    <select id="select-federal" class="form-select py-2 px-3 border-light-subtle">
+                      <option value="">Selecciona distrito federal</option>
+                    </select>
+                    <div class="form-text">Selecciona un distrito para resaltarlo en el mapa.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSenadores">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#submenuSenadores"
+                          aria-expanded="false" aria-controls="submenuSenadores">
+                    <i class="fa-solid fa-building-columns me-2"></i>
+                    Senadores
+                  </button>
+                </h2>
+                <div id="submenuSenadores" class="accordion-collapse collapse"
+                     aria-labelledby="headingSenadores" data-bs-parent="#menuRepresentacion">
+                  <div class="accordion-body">
+                    <button id="btn-senadores" type="button" class="btn btn-vino w-100">
+                      <i class="fa-solid fa-users me-2"></i>Mostrar senadores
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <div class="mb-3">
+              <label class="form-label">Municipio</label>
+              <select id="municipio-select" class="form-select py-2 px-3 border-light-subtle">
+                <option value="">Selecciona un municipio</option>
+              </select>
+              <div class="form-text">Al seleccionar un municipio se mostrarán sus diputadas y diputados.</div>
+            </div>
+
+            <!-- Botón para mostrar/ocultar -->
+            <button class="btn btn-vino mb-2"  
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#collapseNombre" 
+                    aria-expanded="false" 
+                    aria-controls="collapseNombre">
+              Buscar por nombre
+            </button>
+
+            <!-- Bloque colapsable -->
+            <div class="collapse" id="collapseNombre">
+              <div class="card card-body">
+                <div class="mb-3">
+                  <label class="form-label">Buscar por nombre</label>
+                  <input id="input-nombre" class="form-control" placeholder="Ej. Juan Pérez" list="lista-nombres" autocomplete="off">
+                  <datalist id="lista-nombres"></datalist>
+                  <div class="form-text">Escribe y selecciona un nombre para ver su ficha.</div>
+                  <button id="btn-buscar" class="btn btn-vino">
+                    <i class="fa-solid fa-magnifying-glass me-2"></i>Buscar
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Botón -->
+            <button class="btn btn-vino mb-2"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapseEtiquetasPartido"
+                    aria-expanded="false"
+                    aria-controls="collapseEtiquetasPartido">
+              Ver por partido
+            </button>
+
+            <!-- Contenido colapsable -->
+            <div class="collapse" id="collapseEtiquetasPartido">
+              <div class="card card-body">
+                <div id="etiquetasPorPartido" class="d-flex flex-wrap gap-2">
+                  <!-- Se llena dinámicamente -->
+                </div>
+              </div>
+            </div>
+            <div class="d-grid gap-2">
+              <button id="btn-ver-todos" class="btn btn-outline-secondary">Ver resultados del filtro</button>
+            </div>
+          </div>
+        </div>
+      <!-- MAPA -->
+      </aside>
+      <main class="w-100 h-100">
+        <div class="card border-0 rounded-0 h-100">
+          <div class="card-header map-header bg-white bg-opacity-75 backdrop-blur border-0 d-flex justify-content-between align-items-center">
+            <div><i class="fa-regular fa-map me-2"></i>Mapa de Distritos / Municipios</div>
+            <div class="d-flex gap-2 d-lg-none">
+              <!-- Selects móviles dentro del header -->
+              <select id="select-local-mobile" class="form-select form-select-sm">
+                <option value="">Local</option>
+              </select>
+              <select id="select-federal-mobile" class="form-select form-select-sm">
+                <option value="">Federal</option>
+              </select>
+              <button id="btn-limpiar-m" class="btn btn-sm btn-outline-secondary">Limpiar</button>
+            </div>
+          </div>
+          <div class="card-body p-0 position-relative h-100">
+            <div id="map"></div>
+            <div id="leyenda-municipios" class="leyenda-popup"></div>
+          </div>
+        </div>
+      </main>
+  </div>
+
+  <!-- OFFCANVAS (filtros en móvil) -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFiltros" aria-labelledby="offcanvasTitle">
+    <div class="offcanvas-header">
+      <h5 id="offcanvasTitle">Filtros</h5>
+      <button class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="mb-3">
+        <label class="form-label">Diputados Locales</label>
+        <select id="select-local-oc" class="form-select py-2 px-3 border-light-subtle">
+          <option value="">Selecciona distrito local</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Diputados Federales</label>
+        <select id="select-federal-oc" class="form-select py-2 px-3 border-light-subtle">
+          <option value="">Selecciona distrito federal</option>
+        </select>
+      </div>
+      <hr>
+      <div class="mb-3">
+        <label class="form-label">Municipio</label>
+        <select id="municipio-select-oc" class="form-select py-2 px-3 border-light-subtle">
+          <option value="">Selecciona un municipio</option>
+        </select>
+        <div class="form-text">Al seleccionar un municipio se mostrarán sus diputadas y diputados.</div>
+      </div>
+      <div class="d-grid mb-3">
+        <button id="btn-senadores-oc" type="button" class="btn btn-vino">
+          <i class="fa-solid fa-users me-2"></i>Mostrar senadores
+        </button>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Buscar por nombre</label>
+        <input id="input-nombre-oc" class="form-control" placeholder="Ej. Juan Pérez" list="lista-nombres-oc" autocomplete="off">
+        <datalist id="lista-nombres-oc"></datalist>
+      </div>
+      <div class="d-grid gap-2">
+        <button id="btn-buscar-oc" class="btn btn-primary">Buscar</button>
+        <button id="btn-ver-todos-oc" class="btn btn-outline-secondary">Ver resultados del filtro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RESULTADOS (tarjetas) -->
+  <div class="modal fade" id="modalResultados" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-vino text-white py-3 px-4">
+          <h5 id="modalResultadosTitulo" class="modal-title fw-bold text-white">
+            <i class="fa-solid fa-id-badge me-2"></i>Resultados
+          </h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-light p-4" id="contenedorResultados">
+          <!-- Tarjetas dinámicas -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SENADORES -->
+  <div class="modal fade" id="modalSenadores" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-vino text-white py-3 px-4">
+          <h5 id="modalSenadoresTitulo" class="modal-title fw-bold text-white">
+            <i class="fa-solid fa-users me-2"></i>Senadores
+          </h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body bg-light p-4" id="contenedorSenadores"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CUMPLEAÑOS -->
+  <div class="modal fade" id="modalCumpleanos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title">Cumpleaños</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="cumpleanosContenido"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón Cumpleaños -->
+  <button class="btn btn-primary rounded-circle btn-cumple" id="btnCumpleanos" title="Cumpleaños del mes">
+    <i class="fa-solid fa-cake-candles"></i>
+  </button>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+  <script>
+    const coloresPartidos = {
+      'MORENA':'#a50021','PAN':'#0056a4','PRI':'#0e9347','PRD':'#ffcf00',
+      'PT':'#d52b1e','PVEM':'#78be20','MC':'#f58025','INDEPENDIENTE':'#888','OTRO':'#666'
+    };
+
+    function colorPorPartido(valor) {
+      if (!valor) return 'OTRO';
+      const v = valor.toUpperCase().replace(/\s+/g,'');
+      if (v.includes('MORENA')) return 'MORENA';
+      if (v.includes('PAN'))    return 'PAN';
+      if (v.includes('PRI'))    return 'PRI';
+      if (v.includes('PRD'))    return 'PRD';
+      if (v.includes('PT'))     return 'PT';
+      if (v.includes('PVEM'))   return 'PVEM';
+      if (v.includes('MC'))     return 'MC';
+      return 'OTRO';
+    }
+
+    const logosPartidos = {
+      MORENA: "/img/morena.png",
+      PAN: "/img/pan.png",
+      PRI: "/img/pri.png",
+      PRD: "/img/prd.png",
+      PT: "/img/pt.png",
+      PVEM: "/img/pvem.png",
+      MC: "/img/mc.png"
+    };
+
+    function logoPartidoHTML(valor) {
+      const clave = colorPorPartido(valor);
+      const src = logosPartidos[clave];
+      if (!src) return `<span class="badge rounded-pill partido-fallback fw-semibold">${clave}</span>`;
+      return `<span class="partido-logo-badge" title="${clave}" aria-label="${clave}">
+        <img src="${src}" alt="Logotipo ${clave}" loading="lazy">
+      </span>`;
+    }
+
+    const kpiCharts = { tipo: null, partido: null };
+
+    function partidoDeRegistro(registro) {
+      const entrada = Object.entries(registro || {}).find(([campo, valor]) =>
+        claveCampo(campo).includes("partido") && String(valor ?? "").trim()
+      );
+      return entrada ? colorPorPartido(entrada[1]) : null;
+    }
+
+    function municipiosRepresentados() {
+      const municipios = new Set();
+      const municipiosOficialesNorm = new Set(municipiosOficiales.map(m => normalizar(m)));
+      [...dataLocales, ...dataFederales].forEach(registro => {
+        const lista = registro.Municipios_Contempla
+          ? registro.Municipios_Contempla.split(",")
+          : (registro.MUNICIPIO ? [registro.MUNICIPIO] : []);
+        lista
+          .map(m => normalizar(corregirMunicipio(m.trim())))
+          .filter(m => m && municipiosOficialesNorm.has(m))
+          .forEach(m => municipios.add(m));
+      });
+      return municipios;
+    }
+
+    function renderKpis() {
+      const totalLocales = dataLocales.length;
+      const totalFederales = dataFederales.length;
+      const totalSenadores = dataSenadores.length;
+      const registros = [...dataLocales, ...dataFederales, ...dataSenadores];
+      const partidos = new Map();
+
+      registros.forEach(registro => {
+        const partido = partidoDeRegistro(registro);
+        if (partido) partidos.set(partido, (partidos.get(partido) || 0) + 1);
+      });
+
+      const representados = municipiosRepresentados();
+      const totalMunicipios = municipiosOficiales.length;
+      const cobertura = totalMunicipios ? Math.round((representados.size / totalMunicipios) * 100) : 0;
+
+      document.getElementById("kpiLocales").textContent = totalLocales;
+      document.getElementById("kpiFederales").textContent = totalFederales;
+      document.getElementById("kpiSenadores").textContent = totalSenadores;
+      document.getElementById("kpiPartidos").textContent = partidos.size;
+      document.getElementById("kpiMunicipios").textContent = `${representados.size} de ${totalMunicipios} municipios`;
+      document.getElementById("kpiCobertura").textContent = `${cobertura}%`;
+      document.getElementById("kpiGauge").style.setProperty("--coverage", `${cobertura * 3.6}deg`);
+
+      if (typeof Chart === "undefined") return;
+
+      kpiCharts.tipo?.destroy();
+      kpiCharts.tipo = new Chart(document.getElementById("kpiTipoChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Locales", "Federales", "Senadores"],
+          datasets: [{
+            data: [totalLocales, totalFederales, totalSenadores],
+            backgroundColor: ["#691C32", "#1F5F8B", "#64748B"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 9 } } } }
+        }
+      });
+
+      const ordenPartidos = [...partidos.entries()].sort((a, b) => b[1] - a[1]);
+      kpiCharts.partido?.destroy();
+      kpiCharts.partido = new Chart(document.getElementById("kpiPartidoChart"), {
+        type: "doughnut",
+        data: {
+          labels: ordenPartidos.map(([partido]) => partido),
+          datasets: [{
+            data: ordenPartidos.map(([, total]) => total),
+            backgroundColor: ordenPartidos.map(([partido]) => coloresPartidos[partido] || "#94A3B8"),
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const partyLegend = document.getElementById("kpiPartidoLegend");
+      if (partyLegend) {
+        partyLegend.innerHTML = ordenPartidos.map(([partido]) => {
+          const logo = logosPartidos[partido];
+          const color = coloresPartidos[partido] || "#94A3B8";
+          return `<span class="kpi-party-legend-item" title="${partido}">
+            <span class="kpi-party-color" style="background-color:${color}"></span>
+            ${logo
+              ? `<img src="${logo}" alt="Logotipo ${partido}" loading="lazy">`
+              : `<span class="kpi-party-fallback">${partido}</span>`}
+          </span>`;
+        }).join("");
+      }
+    }
+
+    function claveCampo(campo) {
+      return String(campo ?? "").toLowerCase().replace(/[\s_-]+/g, "");
+    }
+
+    function obtenerFotoRegistro(registro) {
+      const entradaFoto = Object.entries(registro || {}).find(([campo, valor]) =>
+        claveCampo(campo) === "urlfoto" && String(valor ?? "").trim()
+      );
+      return entradaFoto ? obtenerUrlFoto({ URL_FOTO: entradaFoto[1] }) : null;
+    }
+
+    function esCampoPartido(campo) {
+      return claveCampo(campo).includes("partido");
+    }
+
+    function iconoCampo(campo) {
+      const clave = claveCampo(campo);
+      if (clave.includes("telefono") || clave.includes("tel")) return "bi bi-telephone-fill";
+      if (clave.includes("correo") || clave.includes("email")) return "bi bi-envelope-fill";
+      if (clave.includes("cumple") || clave.includes("fecha")) return "bi bi-calendar-event-fill";
+      if (clave.includes("municipio") || clave.includes("distrito") || clave.includes("entidad")) return "bi bi-geo-alt-fill";
+      if (clave.includes("cargo") || clave.includes("puesto")) return "bi bi-briefcase-fill";
+      if (clave.includes("partido")) return "bi bi-flag-fill";
+      return "bi bi-info-circle-fill";
+    }
+    // 2) Color por clave
+
+    /* =======================
+       Configuración / Estado
+       ======================= */
+    const URL_DATOS = "/api/diputados";
+
+    let dataLocales = [], dataFederales = [], dataSenadores = [];
+    let capaMunicipios = null;
+    let popupActivo = null;
+    let tipoActivo = "ambos";
+    let municipiosOficiales = [];
+  
+    const normalizar = (nombre) => nombre ? nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim() : "";
+    function obtenerUrlFoto(registro) {
+      let valor = registro?.URL_FOTO;
+      if (valor === null || valor === undefined) return null;
+
+      valor = String(valor).trim().replace(/^['"]|['"]$/g, '').trim();
+      if (!valor) return null;
+
+      // Acepta un ID puro o enlaces comunes de Google Drive.
+      const id = valor.match(/(?:googleusercontent\.com\/d\/|drive\.google\.com\/file\/d\/|[?&]id=)([A-Za-z0-9_-]+)/)?.[1];
+      if (id) return `https://lh3.googleusercontent.com/d/${id}`;
+      if (/^https?:\/\//i.test(valor)) return valor;
+      return `https://lh3.googleusercontent.com/d/${valor}`;
+    }
+    const aliasMunicipios = {
+      "chinconcuac": "Chiconcuac",
+      "tlalnepantla": "Tlalnepantla de Baz"
+    };
+    const corregirMunicipio = (nombre) => aliasMunicipios[normalizar(nombre)] || nombre;
+    const ordenarPorMunicipio = (a,b) => a.split(" ").slice(1).join(" ").localeCompare(b.split(" ").slice(1).join(" "));
+
+    /* =======================
+       Mapa
+       ======================= */
+    // --- Estilos recomendados (puedes ajustar colores) ---
+    const estiloBase = { color:"#94A3B8", weight:1.5, fillOpacity:.4, fillColor:"#E2E8F0" };
+    const estiloHover = { color:"#691C32", weight:2, fillOpacity:.55, fillColor:"#F1DCE3" };
+    const estiloSeleccionado = { color:"#691C32", weight:3, fillColor:"#691C32", fillOpacity:.65 };
+    const estiloAtenuado = { color:"#CBD5E1", weight:1, fillColor:"#E2E8F0", fillOpacity:.1 };
+    const estiloResaltado = estiloSeleccionado;
+
+    // --- Crear mapa (Positron) ---
+    const map = L.map('map', { zoomControl: true }).setView([19.35, -99.75], 9);
+
+    // Esri World Gray Canvas: base neutra y de bajo ruido visual.
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 20
+    }).addTo(map);
+
+    // Pill info de hover
+    const hoverInfoEl = document.getElementById('hoverInfo');
+    let boundsIniciales = null;
+    let municipioSeleccionado = "";
+
+    // --- Carga municipios (usa tu municipios.json y wellknown) ---
+    fetch('./municipios.json')
+      .then(r => r.json())
+      .then(data => {
+        const features = data.map(item => ({
+          type:"Feature",
+          properties:{ municipio:item.municipio, _nombre_normalizado: normalizar(item.municipio) },
+          geometry: wellknown(item.poligono)
+        }));
+
+        capaMunicipios = L.geoJSON({ type:"FeatureCollection", features }, {
+          style: estiloBase,
+          onEachFeature: (feature, layer) => {
+            const nombre = corregirMunicipio(feature.properties.municipio);
+            layer.bindPopup(`<strong>${nombre}</strong>`);
+            layer.bindTooltip(nombre, { direction:"center", className:"tooltip-municipio", sticky:true });
+            layer.on({
+              mouseover: () => {
+                if (!municipioSeleccionado) layer.setStyle(estiloHover);
+                if (hoverInfoEl) {
+                  hoverInfoEl.textContent = nombre;
+                  hoverInfoEl.classList.remove('d-none');
+                }
+              },
+              mouseout: () => {
+                if (!municipioSeleccionado) layer.setStyle(estiloBase);
+                if (hoverInfoEl) hoverInfoEl.classList.add('d-none');
+              },
+              click: () => {
+              if (!municipioSeleccionado) {
+                mostrarDiputadosPorMunicipio(nombre);
+                return;
+              }
+              if (popupActivo) map.closePopup(popupActivo);
+              popupActivo = layer.getPopup();
+              layer.openPopup();
+              map.fitBounds(layer.getBounds(), { padding:[20,20] });
+              }
+            });
+          }
+        }).addTo(map);
+
+        window.capaMunicipios = capaMunicipios;
+        boundsIniciales = capaMunicipios.getBounds();
+        map.fitBounds(boundsIniciales, { padding:[20,20] });
+        municipiosOficiales = [...new Set(features.map(f => corregirMunicipio(f.properties.municipio).trim()))].sort();
+        activarMunicipios("municipio-select");
+        activarMunicipios("municipio-select-oc");
+        renderKpis();
+      });
+    function resetMapaVisual() {
+      if (!capaMunicipios) return;
+      municipioSeleccionado = "";
+      capaMunicipios.eachLayer(l => l.setStyle(estiloBase));
+    // cierra burbuja/popup y quita leyenda
+    try { map.closePopup(); } catch(e) {}
+    const ley = document.getElementById("leyenda-municipios");
+    if (ley) { ley.style.display = "none"; ley.textContent = ""; }
+    }
+
+    function aplicarFiltroMunicipio(municipio, ajustarVista = true) {
+      const objetivo = normalizar(municipio);
+      municipioSeleccionado = objetivo;
+      if (!capaMunicipios) return;
+
+      let layerSeleccionado = null;
+      capaMunicipios.eachLayer(layer => {
+        const nombre = layer.feature?.properties?._nombre_normalizado || "";
+        if (objetivo && nombre === objetivo) {
+          layer.setStyle(estiloSeleccionado);
+          layer.bringToFront();
+          layerSeleccionado = layer;
+        } else if (objetivo) {
+          layer.setStyle(estiloAtenuado);
+        } else {
+          layer.setStyle(estiloBase);
+        }
+      });
+
+      if (layerSeleccionado && ajustarVista) {
+        map.fitBounds(layerSeleccionado.getBounds(), {
+          padding: [90, 90],
+          maxZoom: 12,
+          animate: true,
+          duration: .8
+        });
+      }
+    }
+    function baseActualSinPartido(){
+      let base = [];
+      if (tipoActivo === "local") base = dataLocales;
+      else if (tipoActivo === "federal") base = dataFederales;
+      else base = [...dataLocales, ...dataFederales];
+
+      const mun = (munDesk?.value || munOc?.value || "").trim().toUpperCase();
+      if (mun){
+        base = base.filter(r => perteneceAMunicipio(r, mun));
+      }
+      return base;
+    }
+    function renderEtiquetasPorPartido() {
+      const cont = document.getElementById('etiquetasPorPartido');
+      const base = baseActualSinPartido();
+      if (!cont) return;
+
+      if (!base.length) {
+        cont.innerHTML = `<span class="text-muted">No hay resultados con el filtro actual.</span>`;
+        return;
+      }
+
+      // Agrupar por partido canónico
+      const grupos = new Map();
+      base.forEach(r => {
+        const key = colorPorPartido(r.PARTIDO);
+        const arr = grupos.get(key) || [];
+        arr.push(r);
+        grupos.set(key, arr);
+      });
+
+      // Orden: mayor a menor
+      const orden = [...grupos.keys()].sort((a,b) => grupos.get(b).length - grupos.get(a).length);
+
+      // Pintar etiquetas
+      cont.innerHTML = '';
+      orden.forEach(key => {
+        const lista = grupos.get(key);
+        const btn = document.createElement('button');
+        btn.className = 'partido-pill';
+        btn.setAttribute('type','button');
+        btn.innerHTML = `${logoPartidoHTML(key)} <span class="count">${lista.length}</span>`;
+
+        // Al hacer clic → abrir modalResultados con solo ese grupo
+        btn.addEventListener('click', () => {
+          abrirResultados(lista, `Resultados · ${key}`);
+        });
+
+        cont.appendChild(btn);
+      });
+    }
+    // Render al abrir el collapse
+    document.getElementById('collapseEtiquetasPartido')?.addEventListener('show.bs.collapse', renderEtiquetasPorPartido);
+
+    // Si cambias tipo/municipio y el colapsable está abierto, refresca
+    function refrescarEtiquetasSiAbierto() {
+      const col = document.getElementById('collapseEtiquetasPartido');
+      if (col && col.classList.contains('show')) renderEtiquetasPorPartido();
+    }
+// Llama esto después de onChangeTipo, al elegir municipio, etc.
+// Popup-burbuja que abre un modal (vía callback) de forma estable
+    // Burbuja clickeable que ejecuta un callback (ej. abrirResultados)
+    function abrirBurbujaFoto(latlng, urlFoto, etiquetaOpcional, onClick) {
+      const html = `
+        <div class="d-flex flex-column align-items-center bubble-click" style="user-select:none">
+          <div class="bubble-photo">
+            ${urlFoto
+              ? `<img src="${urlFoto}" alt="Foto">`
+              : `<div class="d-flex align-items-center justify-content-center w-100 h-100" style="background:#eee; font-size:12px; color:#666;">Sin foto</div>`}
+          </div>
+          ${etiquetaOpcional ? `<div class="bubble-label">${etiquetaOpcional}</div>` : ``}
+        </div>
+      `;
+
+      const popup = L.popup({
+        closeButton: false,
+        autoClose: true,
+        closeOnClick: false,  // ← que NO se cierre al hacer clic en la burbuja
+        className: 'bubble-only',
+        offset: L.point(0, -10),
+        keepInView: true
+      }).setLatLng(latlng).setContent(html);
+
+      // 1) Engancha CUANDO el popup ya se agregó al mapa (evento fiable)
+      const attach = () => {
+        // popup.getElement() existe después de 'add'
+        const root = popup.getElement();
+        if (!root) return;
+
+        const bubble = root.querySelector('.bubble-click');
+        if (!bubble) return;
+
+        bubble.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (typeof onClick === 'function') onClick();
+          // cerrar la burbuja tras lanzar el modal
+          map.closePopup();
+          return false;
+        }, { once: true });
+      };
+
+      // Registrar el listener ANTES de abrir el popup
+      popup.once('add', attach);
+
+      // 2) Abrir el popup
+      popup.openOn(map);
+
+      // 3) Red de seguridad: si por alguna razón 'add' no disparó, reintenta atachar
+      setTimeout(() => {
+        if (!popup.getElement()) return;
+        attach();
+      }, 0);
+    }
+    /* =======================
+       Carga de datos (Sheets)
+       ======================= */
+    function poblarDistritos(selectEl, selectMobileEl, selectOcEl, data, separadorTxt, finalTxt) {
+      const todos = [...new Set(data.map(d => d.DISTRITO_REPRESENTA).filter(Boolean))];
+      const normales = todos.filter(d => d !== separadorTxt).sort(ordenarPorMunicipio);
+      normales.forEach(dist => {
+        const opt = new Option(dist, dist);
+        selectEl.add(opt.cloneNode(true));
+        selectMobileEl.add(opt.cloneNode(true));
+        selectOcEl.add(opt);
+      });
+      const sep1 = new Option("────────────", ""); sep1.disabled = true;
+      const sep2 = sep1.cloneNode(true);
+      const sep3 = sep1.cloneNode(true);
+      selectEl.add(sep1); selectMobileEl.add(sep2); selectOcEl.add(sep3);
+      selectEl.add(new Option(finalTxt, separadorTxt));
+      selectMobileEl.add(new Option(finalTxt, separadorTxt));
+      selectOcEl.add(new Option(finalTxt, separadorTxt));
+    }
+
+    fetch(URL_DATOS)
+      .then(r => {
+        if (!r.ok) throw new Error(`No se pudieron cargar los datos (${r.status})`);
+        return r.json();
+      })
+      .then(({ locales, federales, senadores }) => {
+        dataLocales = locales;
+        dataFederales = federales;
+        dataSenadores = Array.isArray(senadores) ? senadores : [];
+        renderKpis();
+
+        poblarDistritos(
+          document.getElementById("select-local"),
+          document.getElementById("select-local-mobile"),
+          document.getElementById("select-local-oc"),
+          dataLocales,
+          "REPRESENTACIÓN PROPORCIONAL",
+          "REPRESENTACIÓN PROPORCIONAL"
+        );
+
+        poblarDistritos(
+          document.getElementById("select-federal"),
+          document.getElementById("select-federal-mobile"),
+          document.getElementById("select-federal-oc"),
+          dataFederales,
+          "5A CIRCUNSCRIPCIÓN",
+          "5A CIRCUNSCRIPCIÓN"
+        );
+
+        // Nombres (datalist) inicial: ambos
+        refrescarDatalistNombres("ambos");
+      });
+
+    /* =======================
+       Filtros (Municipio, Nombre)
+       ======================= */
+    function activarMunicipios(selectId){
+      const sel = document.getElementById(selectId);
+      sel.innerHTML = '<option value="">Selecciona municipio</option>';
+      municipiosOficiales.forEach(m => sel.add(new Option(m, m)));
+      sel.disabled = false;
+    }
+
+    // Sincroniza controles duplicados (desktop/offcanvas/header móvil)
+    function syncValue(aId, bId){
+      const a = document.getElementById(aId);
+      const b = document.getElementById(bId);
+      a.addEventListener("change", ()=>{ b.value = a.value; });
+      b.addEventListener("change", ()=>{ a.value = b.value; });
+    }
+    syncValue("select-local", "select-local-mobile");
+    syncValue("select-local", "select-local-oc");
+    syncValue("select-federal", "select-federal-mobile");
+    syncValue("select-federal", "select-federal-oc");
+
+    const munDesk  = document.getElementById("municipio-select");
+    const munOc    = document.getElementById("municipio-select-oc");
+
+    // Municipios sync
+    syncValue("municipio-select", "municipio-select-oc");
+    munDesk.addEventListener("change", e => mostrarDiputadosPorMunicipio(e.target.value));
+    munOc.addEventListener("change", e => mostrarDiputadosPorMunicipio(e.target.value));
+
+    // Búsqueda por nombre (datalist)
+    const inputNombre = document.getElementById("input-nombre");
+    const inputNombreOc = document.getElementById("input-nombre-oc");
+    function refrescarDatalistNombres(tipo){
+      const listDesk = document.getElementById("lista-nombres");
+      const listOc   = document.getElementById("lista-nombres-oc");
+      listDesk.innerHTML = ""; listOc.innerHTML = "";
+
+      let base = [];
+      if (tipo === "local") base = dataLocales;
+      else if (tipo === "federal") base = dataFederales;
+      else base = [...dataLocales, ...dataFederales];
+
+      const nombres = [...new Set(base.map(r => (r.NOMBRE||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      nombres.forEach(n => {
+        const opt1 = document.createElement("option"); opt1.value = n;
+        const opt2 = document.createElement("option"); opt2.value = n;
+        listDesk.appendChild(opt1); listOc.appendChild(opt2);
+      });
+    }
+
+    /* =======================
+       Acciones de selects de distrito
+       ======================= */
+    function obtenerMunicipiosPorDistrito(distrito, tipo){
+      const datos = tipo === "local" ? dataLocales : dataFederales;
+      const registros = datos.filter(d => d.DISTRITO_REPRESENTA === distrito);
+      const municipios = registros.flatMap(r => {
+        if (r.Municipios_Contempla) return r.Municipios_Contempla.split(",").map(m => m.trim().toUpperCase());
+        if (r.MUNICIPIO) return [r.MUNICIPIO.trim().toUpperCase()];
+        return [];
+      });
+      return [...new Set(municipios)].join(",");
+    }
+    function resaltarMunicipios(municipiosTexto){
+      if (!capaMunicipios || !municipiosTexto) return;
+      const municipios = municipiosTexto.split(",").map(m => normalizar(m));
+      capaMunicipios.eachLayer(layer => {
+        const nombre = layer.feature.properties._nombre_normalizado;
+        if (municipios.includes(nombre)){
+          layer.setStyle(estiloResaltado);
+          layer.bringToFront();
+        } else {
+          layer.setStyle(estiloBase);
+        }
+      });
+    }
+
+  function actualizarPopupsConDatos(distrito, tipo) {
+    const datos = (tipo === "local") ? dataLocales : dataFederales;
+    const registros = datos.filter(d => d.DISTRITO_REPRESENTA === distrito);
+    if (!registros.length || !capaMunicipios) return;
+
+    let primerLayer = null;
+    let primerFoto = null;
+    let primeraEtiqueta = null;
+
+    capaMunicipios.eachLayer(l => {
+      l.unbindPopup && l.unbindPopup();
+      if (l.setStyle) l.setStyle({ color:"#003366", weight:1, fillOpacity:.9, fillColor:"#e6f2ff" });
+    });
+
+    capaMunicipios.eachLayer(layer => {
+      const nombreMun = corregirMunicipio(layer.feature.properties.municipio);
+      const nombreNorm = normalizar(nombreMun);
+
+      const dptosMun = registros.filter(r => {
+        const lista = r.Municipios_Contempla
+          ? r.Municipios_Contempla.split(",").map(m => normalizar(m.trim()))
+          : (r.MUNICIPIO ? [normalizar(r.MUNICIPIO)] : []);
+        return lista.includes(nombreNorm);
+      });
+
+      if (dptosMun.length) {
+        layer.setStyle({ color:"#56212f", weight:3, fillColor:"#ffe6e6", fillOpacity:.6, dashArray:"1, 1" });
+
+        if (!primerLayer) {
+          primerLayer = layer;
+          primerFoto = obtenerUrlFoto(dptosMun.find(r => obtenerUrlFoto(r)));
+          primeraEtiqueta = dptosMun[0]?.NOMBRE || nombreMun;
+        }
+
+        layer.off('click');
+        layer.on('click', () => {
+          const centro = layer.getBounds().getCenter();
+          const foto = obtenerUrlFoto(dptosMun.find(r => obtenerUrlFoto(r)));
+          const etiqueta = dptosMun[0]?.NOMBRE || nombreMun;
+
+          abrirBurbujaFoto(centro, foto, etiqueta, () => {
+            // 👇 Abre tu modal de resultados con las tarjetas
+            abrirResultados(dptosMun, `Diputados de ${nombreMun}`);
+          });
+        });
+      } else {
+        layer.setStyle({ color:"#003366", weight:1, fillOpacity:.9, fillColor:"#e6f2ff" });
+        layer.off('click');
+      }
+    });
+
+    if (primerLayer) {
+      map.fitBounds(primerLayer.getBounds(), { padding:[80,80] });
+
+      setTimeout(() => {
+        const centro = primerLayer.getBounds().getCenter();
+        const nombreMunPrimero = corregirMunicipio(primerLayer.feature.properties.municipio);
+        const nombreNormPrimero = normalizar(nombreMunPrimero);
+        const dptosPrimer = registros.filter(r => {
+          const lista = r.Municipios_Contempla
+            ? r.Municipios_Contempla.split(",").map(m => normalizar(m.trim()))
+            : (r.MUNICIPIO ? [normalizar(r.MUNICIPIO)] : []);
+          return lista.includes(nombreNormPrimero);
+        });
+
+        abrirBurbujaFoto(centro, primerFoto, primeraEtiqueta, () => {
+          abrirResultados(dptosPrimer, `Diputados de ${nombreMunPrimero}`);
+        });
+
+        // leyenda
+        const municipiosTotales = new Set();
+        registros.forEach(r => {
+          const lista = r.Municipios_Contempla
+            ? r.Municipios_Contempla.split(",").map(m => normalizar(m))
+            : (r.MUNICIPIO ? [normalizar(r.MUNICIPIO)] : []);
+          lista.forEach(m => municipiosTotales.add(m));
+        });
+        const ley = document.getElementById("leyenda-municipios");
+        if (ley) {
+          ley.textContent = `📌 Este distrito abarca ${municipiosTotales.size} municipio(s)`;
+          ley.style.display = "block";
+          ley.style.top = "12px";
+          ley.style.left = "auto";
+          ley.style.right = "12px";
+        }
+      }, 250);
+    }
+  }
+    map.on('popupclose', () => document.getElementById("leyenda-municipios").style.display = "none");
+
+    // Cambios de distritos
+    function onChangeLocal(distrito){
+      // Limpia selects federales
+      ["select-federal","select-federal-mobile","select-federal-oc"].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = "";
+      });
+
+      // Ignora vacío o separadores
+      if (!distrito || distrito === "────────────") {
+        if (capaMunicipios) capaMunicipios.eachLayer(l => l.setStyle(estiloBase));
+        return;
+      }
+
+      // RP -> modal filtrado
+      if (norm(distrito) === norm("REPRESENTACIÓN PROPORCIONAL")) {
+        resetMapaVisual();
+        mostrarModalRP(dataLocales);
+        return;
+      }
+
+      // Distritos normales
+      const municipios = obtenerMunicipiosPorDistrito(distrito, "local");
+      resaltarMunicipios(municipios);
+      actualizarPopupsConDatos(distrito, "local");
+    }
+
+    function onChangeFederal(distrito){
+      // Limpia selects locales
+      ["select-local","select-local-mobile","select-local-oc"].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = "";
+      });
+
+      if (!distrito || distrito === "────────────") {
+        if (capaMunicipios) capaMunicipios.eachLayer(l => l.setStyle(estiloBase));
+        return;
+      }
+
+      // 5ª circ -> modal filtrado
+      if (norm(distrito) === norm("5A CIRCUNSCRIPCIÓN")) {
+        resetMapaVisual();
+        mostrarModalCirc(dataFederales);
+        return;
+      }
+
+      const municipios = obtenerMunicipiosPorDistrito(distrito, "federal");
+      resaltarMunicipios(municipios);
+      actualizarPopupsConDatos(distrito, "federal");
+    }
+    ["select-local","select-local-mobile","select-local-oc"].forEach(id => {
+      document.getElementById(id).addEventListener("change", (e)=> onChangeLocal(e.target.value));
+    });
+    ["select-federal","select-federal-mobile","select-federal-oc"].forEach(id => {
+      document.getElementById(id).addEventListener("change", (e)=> onChangeFederal(e.target.value));
+    });
+
+    /* =======================
+       Botones principales
+       ======================= */
+    function limpiarUI() {
+      // --- 1) Selects de distritos (desktop / móvil / offcanvas)
+      ["select-local","select-local-mobile","select-local-oc",
+      "select-federal","select-federal-mobile","select-federal-oc"]
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+
+      // --- 2) Filtros auxiliares (municipio, nombre)
+      if (typeof munDesk  !== "undefined") {
+        munDesk.innerHTML = '<option value="">Selecciona un municipio</option>';
+        activarMunicipios("municipio-select");
+        munDesk.value = "";
+      }
+      if (typeof munOc !== "undefined") {
+        munOc.innerHTML = '<option value="">Selecciona un municipio</option>';
+        activarMunicipios("municipio-select-oc");
+        munOc.value = "";
+      }
+      if (typeof inputNombre   !== "undefined") inputNombre.value = "";
+      if (typeof inputNombreOc !== "undefined") inputNombreOc.value = "";
+      const ln = document.getElementById("lista-nombres");     if (ln) ln.innerHTML = "";
+      const ln2 = document.getElementById("lista-nombres-oc"); if (ln2) ln2.innerHTML = "";
+      if (typeof tipoActivo !== "undefined") tipoActivo = "ambos";
+
+      // --- 3) Mapa: estilo base y quitar el contexto del municipio seleccionado
+      resetMapaVisual();
+
+      // --- 4) Cerrar cualquier popup abierto (incluida la burbuja)
+      try { map.closePopup(); } catch(e) {}
+      if (typeof popupActivo !== "undefined" && popupActivo) popupActivo = null;
+
+      // --- 5) Ocultar leyendas/hover
+      const ley = document.getElementById("leyenda-municipios");
+      if (ley) { ley.style.display = "none"; ley.textContent = ""; }
+      const hoverInfoEl = document.getElementById("hoverInfo");
+      if (hoverInfoEl) hoverInfoEl.classList.add("d-none");
+
+      // --- 6) Cerrar modales Bootstrap si están abiertos
+      const cerrarModalSi = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let inst = bootstrap.Modal.getInstance(el);
+        if (!inst) inst = new bootstrap.Modal(el);
+        try { inst.hide(); } catch(e) {}
+      };
+      cerrarModalSi("modalResultados");
+      cerrarModalSi("modalSenadores");
+      cerrarModalSi("modalCumpleanos");
+      cerrarModalSi("modal-diputados");
+
+      // --- 7) Cerrar offcanvas de filtros (si estuviera abierto)
+      const oc = document.getElementById("offcanvasFiltros");
+      if (oc) {
+        let instOc = bootstrap.Offcanvas.getInstance(oc);
+        if (!instOc) instOc = new bootstrap.Offcanvas(oc);
+        try { instOc.hide(); } catch(e) {}
+      }
+
+      // --- 8) Reset de vista del mapa al encuadre inicial del Estado
+      try {
+        if (boundsIniciales) map.fitBounds(boundsIniciales, { padding:[20,20], animate:true, duration:.8 });
+        else map.setView([19.35, -99.75], 9);
+      } catch(e) {}
+    }
+    document.getElementById("btn-limpiar").addEventListener("click", limpiarUI);
+    document.getElementById("btn-limpiar-m").addEventListener("click", limpiarUI);
+
+    // Construye tarjetas
+// Construye tarjetas
+    function tarjetasHTML(registros){
+      if (!registros.length) return `<p class="text-muted">Sin resultados con los filtros aplicados.</p>`;
+
+      return `<div class="row g-3">` + registros.map(r => {
+        const tipoRepresentacion = r._tipoRepresentacion || "";
+
+        return `
+          <div class="col-md-6 col-lg-4">
+            <div class="card deputy-card h-100 border-0 rounded-4 shadow-sm bg-white">
+              <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center gap-2 py-3 px-3">
+                ${tipoRepresentacion ? `<span class="badge rounded-pill tipo-representacion bg-secondary-subtle text-secondary fw-semibold">${tipoRepresentacion}</span>` : `<span></span>`}
+                ${logoPartidoHTML(r.PARTIDO)}
+              </div>
+
+              <!-- Foto -->
+              <div class="card-img-top-wrapper">
+                ${obtenerUrlFoto(r)
+                  ? `<img src="${obtenerUrlFoto(r)}" alt="Foto de ${r.NOMBRE || ''}" class="foto-diputado" loading="lazy" referrerpolicy="no-referrer">`
+                  : `<div class="d-flex align-items-center justify-content-center bg-light rounded-circle photo-placeholder">Sin foto</div>`}
+              </div>
+
+              <!-- Info -->
+              <div class="card-body pt-2 px-3 pb-3">
+                <h5 class="card-title fw-bold text-dark mb-2">${r.NOMBRE || "Sin nombre"}</h5>
+                ${r.CARGO ? `<p class="card-text small text-muted mb-1"><i class="bi bi-briefcase me-2"></i>${r.CARGO}</p>` : ""}
+                ${r.MUNICIPIO ? `<p class="card-text small text-muted mb-0"><i class="bi bi-geo-alt me-2"></i>${r.MUNICIPIO}</p>` : ""}
+
+                <button class="btn-ver-mas btn btn-sm btn-outline-secondary mt-3"
+                  onclick="toggleDetalles(this)" aria-expanded="false">
+                  Ver más <i class="bi bi-chevron-down ms-1"></i>
+                </button>
+
+                <div class="detalles-adicionales bg-light rounded-3 p-3 mt-3" style="display:none;">
+                  <div class="detail-item small text-muted"><i class="bi bi-telephone-fill"></i><span>${r.TEL || 'No disponible'}</span></div>
+                  <div class="detail-item small text-muted"><i class="bi bi-envelope-fill"></i><span>${r.Correo || 'No disponible'}</span></div>
+                  <div class="detail-item small text-muted"><i class="bi bi-calendar-event-fill"></i><span>${r.CUMPLEAÑOS || 'No disponible'}</span></div>
+                  <div class="detail-item small text-muted"><i class="bi bi-person-badge-fill"></i><span>${r.SP || 'No disponible'}</span></div>
+                  <div class="detail-item small text-muted"><i class="bi bi-telephone"></i><span>${r.TELSP || 'No disponible'}</span></div>
+                  <div class="detail-item small text-muted mb-0"><i class="bi bi-flag-fill"></i><span>${logoPartidoHTML(r.PARTIDO)}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join("") + `</div>`;
+    }
+
+    function toggleDetalles(btn) {
+      const detalles = btn.nextElementSibling;
+      const estaOculto = detalles.style.display === "none";
+      detalles.style.display = estaOculto ? "block" : "none";
+      btn.setAttribute("aria-expanded", String(estaOculto));
+      btn.innerHTML = estaOculto
+        ? 'Ver menos <i class="bi bi-chevron-up ms-1"></i>'
+        : 'Ver más <i class="bi bi-chevron-down ms-1"></i>';
+    }
+
+
+    function abrirResultados(registros, titulo="Resultados") {
+      const cont = document.getElementById("contenedorResultados");
+      const tituloEl = document.getElementById("modalResultadosTitulo");
+      if (tituloEl) tituloEl.innerHTML = `<i class="fa-solid fa-id-badge me-2"></i>${titulo}`;
+      cont.innerHTML = tarjetasHTML(registros);
+
+      const modalEl = document.getElementById("modalResultados");
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+
+    function escaparHTML(valor) {
+      return String(valor ?? "").replace(/[&<>'"]/g, caracter => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[caracter]));
+    }
+
+    function etiquetaCampo(campo) {
+      return campo
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase()
+        .replace(/(^|\s)\S/g, letra => letra.toUpperCase());
+    }
+
+    function nombreRegistroSenador(registro, indice) {
+      const entradaNombre = Object.entries(registro).find(([campo, valor]) =>
+        normalizar(campo).includes("nombre") && String(valor ?? "").trim()
+      );
+      return entradaNombre ? String(entradaNombre[1]).trim() : `Registro ${indice + 1}`;
+    }
+
+    function tarjetasSenadoresHTML(registros) {
+      if (!registros.length) return `<p class="text-muted mb-0">No hay registros de senadores disponibles.</p>`;
+
+      return `<div class="row g-4">${registros.map((registro, indice) => {
+        const nombre = nombreRegistroSenador(registro, indice);
+        const foto = obtenerFotoRegistro(registro);
+        const campos = Object.entries(registro).filter(([campo, valor]) => {
+          const esNombre = normalizar(campo).includes("nombre");
+          const esFoto = claveCampo(campo) === "urlfoto";
+          return !esNombre && !esFoto && String(valor ?? "").trim();
+        });
+
+        return `
+          <div class="col-md-6 col-xl-4">
+            <article class="card senador-card h-100 border-0 rounded-4 shadow-sm bg-white">
+              <header class="card-header bg-transparent border-0 py-3 px-3">
+                <h5 class="card-title fw-bold text-dark mb-0">${escaparHTML(nombre)}</h5>
+              </header>
+              ${foto ? `<div class="senador-photo-wrapper"><img class="senador-photo" src="${escaparHTML(foto)}" alt="Foto de ${escaparHTML(nombre)}" loading="lazy" referrerpolicy="no-referrer"></div>` : ""}
+              <div class="card-body pt-0 px-3 pb-3">
+                <div class="senador-fields bg-light rounded-3 p-3">
+                  ${campos.map(([campo, valor]) => `
+                    <div class="senador-field">
+                      <span class="senador-field-label"><i class="${iconoCampo(campo)}"></i>${escaparHTML(etiquetaCampo(campo))}</span>
+                      <span class="senador-field-value">${esCampoPartido(campo) ? logoPartidoHTML(valor) : escaparHTML(valor)}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </article>
+          </div>`;
+      }).join("")}</div>`;
+    }
+
+    function mostrarSenadores() {
+      const titulo = `Senadores (${dataSenadores.length})`;
+      document.getElementById("modalSenadoresTitulo").innerHTML = `<i class="fa-solid fa-users me-2"></i>${titulo}`;
+      document.getElementById("contenedorSenadores").innerHTML = tarjetasSenadoresHTML(dataSenadores);
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("modalSenadores")).show();
+    }
+
+    ["btn-senadores", "btn-senadores-oc"].forEach(id => {
+      document.getElementById(id)?.addEventListener("click", mostrarSenadores);
+    });
+
+    function perteneceAMunicipio(registro, municipio) {
+      const objetivo = normalizar(corregirMunicipio(municipio));
+      const municipios = registro.Municipios_Contempla
+        ? registro.Municipios_Contempla.split(",").map(m => normalizar(corregirMunicipio(m.trim())))
+        : (registro.MUNICIPIO ? [normalizar(corregirMunicipio(registro.MUNICIPIO))] : []);
+      return municipios.includes(objetivo);
+    }
+
+    function obtenerDiputadosPorMunicipio(municipio) {
+      if (!municipio) return [];
+      const locales = dataLocales
+        .filter(r => perteneceAMunicipio(r, municipio))
+        .map(r => ({ ...r, _tipoRepresentacion: "Local" }));
+      const federales = dataFederales
+        .filter(r => perteneceAMunicipio(r, municipio))
+        .map(r => ({ ...r, _tipoRepresentacion: "Federal" }));
+      return [...locales, ...federales];
+    }
+
+    function mostrarDiputadosPorMunicipio(municipio) {
+      aplicarFiltroMunicipio(municipio);
+      if (!municipio) return;
+      const registros = obtenerDiputadosPorMunicipio(municipio);
+      abrirResultados(registros, `Diputadas y Diputados de ${municipio}`);
+    }
+
+    function filtrarPorMunicipio() {
+      const municipio = (munDesk.value || munOc.value || "").trim();
+      if (!municipio) {
+        return [
+          ...dataLocales.map(r => ({ ...r, _tipoRepresentacion: "Local" })),
+          ...dataFederales.map(r => ({ ...r, _tipoRepresentacion: "Federal" }))
+        ];
+      }
+      return obtenerDiputadosPorMunicipio(municipio);
+    }
+    document.getElementById("btn-ver-todos").addEventListener("click", ()=> abrirResultados(filtrarPorMunicipio(), "Coincidencias por municipio"));
+    document.getElementById("btn-ver-todos-oc").addEventListener("click", ()=> abrirResultados(filtrarPorMunicipio(), "Coincidencias por municipio"));
+
+    // Botón BUSCAR (por nombre exacto de datalist)
+    function buscarPorNombre(){
+      const nombre = (inputNombre.value || inputNombreOc.value || "").trim();
+      if (!nombre){ abrirResultados([], "Búsqueda por nombre"); return; }
+      let base = [];
+      if (tipoActivo === "local") base = dataLocales;
+      else if (tipoActivo === "federal") base = dataFederales;
+      else base = [...dataLocales, ...dataFederales];
+      const regs = base.filter(r => (r.NOMBRE||"").trim().toLowerCase() === nombre.toLowerCase());
+      abrirResultados(regs, `Búsqueda: ${nombre}`);
+    }
+    document.getElementById("btn-buscar").addEventListener("click", buscarPorNombre);
+    document.getElementById("btn-buscar-oc").addEventListener("click", buscarPorNombre);
+
+    /* =======================
+       Representación prop/circ
+       ======================= */
+  // Normaliza strings para comparar sin acentos/espacios
+      const norm = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+
+      function mostrarModalRP(baseLocales) {
+        const registros = baseLocales.filter(r => norm(r.DISTRITO_REPRESENTA) === norm("REPRESENTACIÓN PROPORCIONAL"));
+        abrirResultados(registros, "Diputaciones por Representación Proporcional");
+      }
+
+      function mostrarModalCirc(baseFederales) {
+        const registros = baseFederales.filter(r => norm(r.DISTRITO_REPRESENTA) === norm("5A CIRCUNSCRIPCIÓN"));
+        abrirResultados(registros, "Diputaciones 5ª Circunscripción");
+      }
+
+    /* =======================
+       Cumpleaños
+       ======================= */
+    function mostrarCumpleanosMes() {
+      const hoy = new Date(), mesActual = hoy.getMonth() + 1;
+      const base = [
+        ...dataLocales.map(r => ({ ...r, _tipoRepresentacion: "Local" })),
+        ...dataFederales.map(r => ({ ...r, _tipoRepresentacion: "Federal" }))
+      ];
+      const cumpleanieros = base.filter(d => {
+        const fecha = d.CUMPLEAÑOS?.trim(); if (!fecha || !fecha.includes("/")) return false;
+        const [, mesStr] = fecha.split("/"); const mes = parseInt(mesStr); return mes === mesActual;
+      }).map(d => {
+        const [diaStr] = d.CUMPLEAÑOS.split("/"); const dia = parseInt(diaStr);
+        return { ...d, diaCumple: isNaN(dia) ? 99 : dia };
+      }).sort((a,b)=> a.diaCumple - b.diaCumple);
+
+      const cont = document.getElementById("cumpleanosContenido");
+      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      if (cumpleanieros.length){
+        cont.innerHTML = `<h5 class="mb-3">🎉 Cumpleaños de ${meses[mesActual-1]}</h5>` + tarjetasHTML(cumpleanieros);
+      } else {
+        cont.innerHTML = `<h5 class="mb-3">🎉 Cumpleaños de ${meses[mesActual-1]}</h5><p>No hay cumpleaños este mes.</p>`;
+      }
+      new bootstrap.Modal(document.getElementById("modalCumpleanos")).show();
+    }
+    document.getElementById("btnCumpleanos").addEventListener("click", mostrarCumpleanosMes);
+
+  </script>
+</body>
+</html>
